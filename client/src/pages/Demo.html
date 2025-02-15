@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - Cyber Guard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Custom styles for the dashboard */
+        .dashboard-card {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation Bar -->
+    <nav class="bg-blue-600 p-4 text-white">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold">Cyber Guard</a>
+            <div>
+                <a href="/dashboard" class="mx-2">Dashboard</a>
+                <a href="/analyze" class="mx-2">Analyze Files</a>
+                <a href="/report_incident" class="mx-2">Report Incident</a>
+                <a href="/logout" class="mx-2">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Content -->
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold mb-6">Welcome, User!</h1>
+
+        <!-- Cards Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- File Analysis Card -->
+            <div class="dashboard-card">
+                <h2 class="text-xl font-semibold mb-4">File Analysis</h2>
+                <p class="text-gray-600 mb-4">
+                    Upload and analyze files (DLLs, EXEs, PDFs) for potential threats.
+                </p>
+                <a href="/analyze" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Analyze Files
+                </a>
+            </div>
+
+            <!-- Incident Reporting Card -->
+            <div class="dashboard-card">
+                <h2 class="text-xl font-semibold mb-4">Incident Reporting</h2>
+                <p class="text-gray-600 mb-4">
+                    Report security incidents with severity levels (High, Medium, Low).
+                </p>
+                <a href="/report_incident" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Report Incident
+                </a>
+            </div>
+
+            <!-- View Incidents Card -->
+            <div class="dashboard-card">
+                <h2 class="text-xl font-semibold mb-4">View Incidents</h2>
+                <p class="text-gray-600 mb-4">
+                    Track and manage all reported security incidents.
+                </p>
+                <a href="/view_incidents" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    View Incidents
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Activity Section -->
+        <div class="mt-8">
+            <h2 class="text-2xl font-bold mb-4">Recent Activity</h2>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-2">Date</th>
+                            <th class="text-left py-2">Activity</th>
+                            <th class="text-left py-2">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b">
+                            <td class="py-2">06-01-2025</td>
+                            <td class="py-2">File Analysis: 7z2301-x64.exe</td>
+                            <td class="py-2 text-green-500">Completed</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-2">06-01-2025</td>
+                            <td class="py-2">Incident Reported: Suspicious Activity</td>
+                            <td class="py-2 text-yellow-500">Pending</td>
+                        </tr>
+                        <tr class="border-b">
+                            <td class="py-2">06-01-2025</td>
+                            <td class="py-2">File Analysis: OSCP.pdf</td>
+                            <td class="py-2 text-green-500">Completed</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
