@@ -56,7 +56,7 @@ const FileUpload = () => {
     formData.append("file", file);
     // http://localhost:3000/upload
     try {
-      const response = await axios.post("http://localhost:3000/upload", formData, {
+      const response = await axios.post("/api/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
