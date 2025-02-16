@@ -7,8 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
-  Accordion,
-  AccordionContent,
+  Accordion,  AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
@@ -55,7 +54,7 @@ const FileUpload = () => {
     setUploadProgress(0);
     const formData = new FormData();
     formData.append("file", file);
-
+    // http://localhost:3000/upload
     try {
       const response = await axios.post("http://localhost:3000/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
