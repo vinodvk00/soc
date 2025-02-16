@@ -12,7 +12,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const upload = multer({ dest: 'uploads/' });
+app.use(cors({ origin: '*' }));
+
+// const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: '/tmp/' }); // Use `/tmp/` for Vercel functions
 const VIRUSTOTAL_API_KEY = process.env.VIRUSTOTAL_API_KEY;
 const VIRUSTOTAL_API_URL = 'https://www.virustotal.com/api/v3/files/';
 
