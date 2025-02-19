@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
+import path from 'path';
 
 import userRoutes from './routes/user.route.js';
 import authRoutes from './routes/auth.route.js';
@@ -21,6 +22,9 @@ mongoose
     .catch((err) => {
         console.log(err);
     });
+
+
+const __dirname = path.resolve();
 
 const app = express();
 app.use(cors());
@@ -98,6 +102,13 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
 app.use('/api/user', userRoutes);
 app.use('/api/auth', authRoutes);
+
+
+app.use(express.static(path.join(__dirname, '/client/dist')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
+});
 
 // Start server
 // const PORT = process.env.PORT || 5000;
