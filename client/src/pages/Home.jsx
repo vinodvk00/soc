@@ -145,7 +145,7 @@ const HomePage = () => {
           </CardHeader>
           <CardFooter className="flex justify-center">
             <Button size="lg" asChild>
-              <Link to="/upload">Get Started Now</Link>
+              <Link to="/file-upload">Get Started Now</Link>
             </Button>
           </CardFooter>
         </Card>
