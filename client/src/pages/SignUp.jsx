@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Separator } from "@/components/ui/separator"
+import OAuth from '../components/OAuth';
 
 function SignUp() {
   const [formData, setFormData] = useState({
@@ -35,7 +37,7 @@ function SignUp() {
         return setErrorMessage(data.message);
       }
       setLoading(false);
-      if(res.ok) {
+      if (res.ok) {
         navigate('/sign-in');
       }
     } catch (error) {
@@ -95,6 +97,18 @@ function SignUp() {
             Sign Up
           </Button>
         </form>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <Separator className="w-full" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-gray-500">Or continue with</span>
+          </div>
+        </div>
+
+        <OAuth />
+
         <p className="text-sm text-center">
           Already have an account?{' '}
           <Link to="/sign-in" className="text-blue-500 hover:underline">

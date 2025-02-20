@@ -13,6 +13,7 @@ import Demo from './pages/Demo'
 import Navbar from './components/Navbar'
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
                 <ProtectedRoute>
                   <Routes>
                     <Route path="/" element={<HomePage />} />
+                    <Route path="/profile" element={<Profile />} />
                     <Route path="/demo" element={<Demo />} />
                     <Route path="/user-management" element={<UserManagement />} />
                     <Route path="/incident-login" element={<IncidentLogin />} />

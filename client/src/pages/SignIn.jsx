@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useDispatch, useSelector } from 'react-redux';
 import { signInStart, signInSuccess, signInFailure } from "@/redux/user/userSlice";
-
+import { Separator } from "@/components/ui/separator"
+import OAuth from '../components/OAuth';
 
 function SignIn() {
   const [formData, setFormData] = useState({
@@ -13,13 +13,14 @@ function SignIn() {
     password: '',
   });
 
-
   const { loading, error: errorMessage } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
@@ -35,12 +36,10 @@ function SignIn() {
       });
       const data = await res.json();
       if (data.success === false) {
-        console.log(data.message);
         dispatch(signInFailure(data.message));
       }
 
       if (res.ok) {
-        console.log(data);
         dispatch(signInSuccess(data));
         navigate('/');
       }
@@ -51,45 +50,78 @@ function SignIn() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded shadow-md">
-        <h2 className="text-2xl font-bold text-center">Sign In</h2>
+      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-lg">
+        <div className="space-y-2 text-center">
+          <h2 className="text-3xl font-bold">Welcome Back</h2>
+          <p className="text-gray-500">Sign in to access your SOC Portal</p>
+        </div>
+
+        {errorMessage && (
+          <div className="p-3 text-sm text-red-500 bg-red-100 border border-red-200 rounded">
+            {errorMessage}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium">
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Email
             </label>
             <Input
               id="email"
-              name="email"
               type="email"
               required
               value={formData.email}
               onChange={handleChange}
+              placeholder="Enter your email"
               className="mt-1"
+              disabled={loading}
             />
           </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium">
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Password
             </label>
             <Input
               id="password"
-              name="password"
               type="password"
               required
               value={formData.password}
               onChange={handleChange}
+              placeholder="Enter your password"
               className="mt-1"
+              disabled={loading}
             />
           </div>
-          <Button type="submit" className="w-full">
-            Sign In
+          <Button 
+            type="submit" 
+            className="w-full"
+            disabled={loading}
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
-        <p className="text-sm text-center">
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <Separator className="w-full" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-gray-500">Or continue with</span>
+          </div>
+        </div>
+
+        <OAuth />
+
+        <div className="text-sm text-center text-gray-500">
           Don't have an account?{' '}
-          <Link to="/sign-up" className="text-blue-500 hover:underline">Sign Up</Link>
-        </p>
+          <Link 
+            to="/sign-up" 
+            className="font-semibold text-primary hover:underline"
+          >
+            Sign Up
+          </Link>
+        </div>
       </div>
     </div>
   );
