@@ -14,6 +14,8 @@ import Navbar from './components/Navbar'
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import Profile from './pages/Profile';
+import AboutPage from './pages/AboutProject';
+import Resources from './pages/Resourse';
 
 function App() {
   return (
@@ -37,6 +39,8 @@ function App() {
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/demo" element={<Demo />} />
                     <Route path="/user-management" element={<UserManagement />} />
+                    <Route path="/aboutproject" element={<AboutPage />} />
+                    <Route path="/res" element={<Resources />} />
                     <Route path="/incident-login" element={<IncidentLogin />} />
                     <Route path="/integration" element={<Integration />} />
                     <Route path="/incident-reports" element={<IncidentReportManagement />} />

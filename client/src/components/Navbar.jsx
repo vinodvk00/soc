@@ -26,11 +26,12 @@ const Navbar = () => {
   const navItems = [
     { path: '/', label: 'Home' },
     { path: '/file-upload', label: 'File Upload' },
-    { path: '/incident-login', label: 'Incident Login' },
-    { path: '/incident-reports', label: 'Incident Reports' },
-    { path: '/database', label: 'Database' },
+    // { path: '/incident-login', label: 'Incident Login' },
+    // { path: '/incident-reports', label: 'Incident Reports' },
+    // { path: '/database', label: 'Database' },
     { path: '/user-management', label: 'Users' },
-    { path: '/integration', label: 'Integration' },
+    { path: '/aboutproject', label: 'About Project' },
+    // { path: '/integration', label: 'Integration' },
     { path: '/demo', label: 'Demo' }
   ];
 
