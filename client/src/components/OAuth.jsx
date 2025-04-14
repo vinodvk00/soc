@@ -39,7 +39,7 @@ export default function OAuth() {
                     name: resultsFromGoogle.user.displayName,
                     email: resultsFromGoogle.user.email,
                     googlePhotoUrl: resultsFromGoogle.user.photoURL,
-                    role: 'analyst',
+                    role: 'user', // Changed from 'analyst' to 'user'
                     lastLogin: new Date().toISOString(),
                 }),
             });
@@ -52,7 +52,7 @@ export default function OAuth() {
                     accessLevel: data.accessLevel || 'basic',
                     department: data.department || 'SOC',
                 }));
-                navigate('/dashboard');
+                navigate('/');
             } else {
                 throw new Error(data.message || 'Failed to authenticate');
             }

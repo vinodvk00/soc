@@ -1,6 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
-import { Upload, FileIcon, Loader2, Download } from "lucide-react";
+import { Upload, FileIcon, Loader2, Download, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -28,6 +28,19 @@ import {
   TabsTrigger 
 } from "@/components/ui/tabs";
 import * as XLSX from 'xlsx';
+import { useSelector } from "react-redux";
+// Import toast components
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/components/ui/use-toast";
+// Import Dialog components
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 const FileUpload = () => {
   const [file, setFile] = useState(null);
@@ -35,6 +48,11 @@ const FileUpload = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  // Add new state variables for incident creation
+  const [showIncidentDialog, setShowIncidentDialog] = useState(false);
+  const [incidentNote, setIncidentNote] = useState('');
+  const { currentUser } = useSelector(state => state.user);
+  const { toast } = useToast();
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -68,6 +86,11 @@ const FileUpload = () => {
 
       setResult(response.data);
       setError("");
+      
+      // Check if the file is malicious and prompt for incident creation
+      if (response.data.maliciousCount > 0) {
+        setShowIncidentDialog(true);
+      }
     } catch (err) {
       console.error("Upload error:", err);
       setError(
@@ -76,6 +99,143 @@ const FileUpload = () => {
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Add new function to create an incident
+  const handleCreateIncident = async () => {
+    try {
+      // Calculate detection rate
+      const totalScans = result.antivirusResults.length;
+      const detectionRate = Math.round((result.maliciousCount / totalScans) * 100);
+      
+      // Determine severity based on detection rate
+      let severity = "Low";
+      if (detectionRate >= 70) severity = "Critical";
+      else if (detectionRate >= 40) severity = "High";
+      else if (detectionRate >= 20) severity = "Medium";
+      
+      // Create a detailed description with all relevant information
+      const detectedEngines = groupedResults.detected.map(r => `${r.engine}: ${r.verdict}`).join('\n- ');
+      
+      const detailedDescription = `
+## File Analysis Report
+
+### File Information
+- **Name**: ${result.name}
+- **Size**: ${result.size || 'Unknown'}
+- **Type**: ${result.description || 'Unknown'}
+- **SHA-256**: ${result.hash_sha256}
+${result.hash_md5 ? `- **MD5**: ${result.hash_md5}` : ''}
+${result.hash_sha1 ? `- **SHA-1**: ${result.hash_sha1}` : ''}
+
+### Scan Results
+- **Total Engines**: ${totalScans}
+- **Malicious Detections**: ${result.maliciousCount} (${detectionRate}%)
+- **Clean Results**: ${groupedResults.undetected.length}
+- **Timeout Results**: ${groupedResults.timeout.length}
+- **Unsupported Results**: ${groupedResults.unsupported.length}
+
+### Detection Details
+- ${detectedEngines || 'No malicious detections'}
+
+### User Notes
+${incidentNote.trim() || "No additional notes provided"}
+      `.trim();
+      
+      const incidentData = {
+        title: `Malicious File Detected: ${result.name}`,
+        description: detailedDescription,
+        severity,
+        status: "Open", 
+        category: "Malware",
+        assignedTo: null, // Will be assigned by a manager later
+        reportedBy: currentUser?._id,
+        source: "File Upload",
+        tags: ["malware", "file-analysis"],
+        metadata: {
+          fileInfo: {
+            fileName: result.name,
+            fileSize: result.size,
+            fileType: result.description,
+            fileHash: {
+              sha256: result.hash_sha256,
+              md5: result.hash_md5 || null,
+              sha1: result.hash_sha1 || null
+            }
+          },
+          scanResults: {
+            maliciousCount: result.maliciousCount,
+            totalEngines: totalScans,
+            detectionRate,
+            detectedEngines: groupedResults.detected.map(r => ({ 
+              engine: r.engine, 
+              verdict: r.verdict 
+            })),
+            cleanEngines: groupedResults.undetected.length,
+            timeoutEngines: groupedResults.timeout.length,
+            unsupportedEngines: groupedResults.unsupported.length
+          },
+          uploadTimestamp: new Date().toISOString(),
+          uploadedBy: {
+            id: currentUser?._id,
+            name: currentUser?.username || "Unknown User",
+            email: currentUser?.email || "Unknown Email"
+          }
+        }
+      };
+      
+      console.log("Sending incident data:", incidentData);
+      
+      // Use the correct endpoint path that matches your backend route
+      const response = await axios.post("/api/incidents/create", incidentData, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        }
+      });
+      
+      console.log("Response:", response.data);
+      
+      toast({
+        title: "Incident Created",
+        description: `Incident #${response.data.incidentNumber || 'Unknown'} has been created and security team notified.`,
+      });
+    } catch (err) {
+      console.error("Incident creation error:", err);
+      
+      // Better error handling
+      let errorMessage = "Failed to create incident";
+      
+      if (err.response) {
+        console.error("Error response data:", err.response.data);
+        console.error("Error response status:", err.response.status);
+        
+        if (typeof err.response.data === 'object' && err.response.data.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.response.status === 401) {
+          errorMessage = "Authentication required. Please log in again.";
+        } else if (err.response.status === 403) {
+          errorMessage = "You don't have permission to create incidents.";
+        } else if (err.response.status === 404) {
+          errorMessage = "API endpoint not found. Check server configuration.";
+        } else if (err.response.status >= 500) {
+          errorMessage = "Server error. Please try again later.";
+        }
+      } else if (err.request) {
+        errorMessage = "No response from server. Check your network connection.";
+      } else {
+        errorMessage = err.message;
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setShowIncidentDialog(false);
+      setIncidentNote('');
     }
   };
 
@@ -192,6 +352,7 @@ const FileUpload = () => {
   };
 
   return (
+    <>
     <div className="container mx-auto py-6 max-w-4xl">
       <Card>
         <CardHeader>
@@ -256,15 +417,28 @@ const FileUpload = () => {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle>Analysis Results {getStatusBadge()}</CardTitle>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleDownloadReport}
-                      className="gap-2"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download Report
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleDownloadReport}
+                        className="gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        Download Report
+                      </Button>
+                      {result && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setShowIncidentDialog(true)}
+                          className="gap-2"
+                        >
+                          <AlertCircle className="h-4 w-4" />
+                          Report Incident
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="grid gap-6">
@@ -444,6 +618,45 @@ const FileUpload = () => {
         </CardContent>
       </Card>
     </div>
+    
+    {/* Move the incident dialog inside the main container */}
+    <Dialog open={showIncidentDialog} onOpenChange={setShowIncidentDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create Security Incident</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-md p-4">
+            <p className="text-sm font-medium">
+              This file was detected as malicious by {result?.maliciousCount} out of {result?.antivirusResults.length} security vendors.
+            </p>
+            <p className="text-sm mt-2">
+              A security incident will be created to track this finding.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="incident-note">Additional Notes (Optional)</Label>
+            <Textarea 
+              id="incident-note" 
+              placeholder="Add any additional context about this file..."
+              value={incidentNote}
+              onChange={(e) => setIncidentNote(e.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowIncidentDialog(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleCreateIncident}>
+            Create Incident
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    
+    <Toaster />
+    </>
   );
 };
 

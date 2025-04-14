@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -50,10 +50,9 @@ const AdminDashboard = () => {
   });
 
   useEffect(() => {
-    // Redirect if not admin
     if (!currentUser?.isAdmin) {
-      navigate('/');
-      return;
+        setLoading(false);
+        return;
     }
 
     const fetchUsers = async () => {
@@ -78,14 +77,53 @@ const AdminDashboard = () => {
   }, [currentUser, navigate]);
 
   const handleUserAction = async (userId, action) => {
-    // Handle user actions (delete, ban, edit)
-    console.log(`${action} user ${userId}`);
+    if (action === 'delete') {
+      try {
+        const res = await fetch(`/api/user/archive/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (res.ok) {
+          // Update the UI to reflect the archived status
+          setUsers(users.map(user => 
+            user._id === userId ? { ...user, isArchived: true } : user
+          ));
+          // Show success message
+          alert('User archived successfully');
+        } else {
+          console.error('Failed to archive user');
+        }
+      } catch (error) {
+        console.error('Error archiving user:', error);
+      }
+    } else {
+      // Handle other actions (edit, ban)
+      console.log(`${action} user ${userId}`);
+    }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Progress value={45} className="w-1/3" />
+      </div>
+    );
+  }
+
+  // Add access denied message for non-admin users
+  if (!currentUser?.isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="max-w-md text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h2>
+          <p className="text-gray-600 mb-6">This area is restricted to administrators only.</p>
+          <Button onClick={() => navigate('/')} variant="outline">
+            Return to Home
+          </Button>
+        </div>
       </div>
     );
   }
@@ -188,6 +226,8 @@ const AdminDashboard = () => {
                       <TableCell>
                         {user.isAdmin ? 
                           <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Admin</span>
+                          : user.isArchived ?
+                          <span className="bg-amber-100 text-amber-800 text-xs font-medium px-2.5 py-0.5 rounded">Archived</span>
                           : 
                           <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">User</span>
                         }
@@ -217,10 +257,10 @@ const AdminDashboard = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleUserAction(user._id, 'delete')}
-                              className="flex items-center gap-2 text-red-600"
+                              className="flex items-center gap-2 text-amber-600"
                             >
                               <Trash className="h-4 w-4" />
-                              Delete
+                              Archive
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

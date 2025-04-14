@@ -19,15 +19,14 @@ export const verifyToken = (req, res, next) => {
   });
 };
 
-// export const verifyAdmin = (req, res, next) => {
-//   verifyToken(req, res, () => {
-//     console.log(req.user.isAdmin);
-//     if (!req.user.isAdmin) {
-//       return next(errorHandler(403, "Access denied: Admins only"));
-//     }
-//     next();
-//   });
-// };
+export const verifyAdmin = (req, res, next) => {
+  verifyToken(req, res, () => {
+    if (!req.user.isAdmin) {
+      return next(errorHandler(403, "Access denied: Admins only"));
+    }
+    next();
+  });
+};
 
 
 

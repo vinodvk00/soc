@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { Shield, Moon, Sun, Search, Menu, X } from 'lucide-react';
+import { Shield, Moon, Sun, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+// import { Input } from '@/components/ui/input';
 import { Avatar } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toggleTheme } from '../redux/theme/themeSlice';
 import { signoutSuccess } from '../redux/user/userSlice';
+// import { Users, AlertTriangle /* other icons */ } from 'lucide-react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,13 +24,18 @@ const Navbar = () => {
   const { currentUser } = useSelector((state) => state.user);
   const { theme } = useSelector((state) => state.theme);
 
+  // Update the navItems array to include the incident management link for admins
+  
   const navItems = [
     { path: '/', label: 'Home' },
     { path: '/file-upload', label: 'File Upload' },
     // { path: '/incident-login', label: 'Incident Login' },
     // { path: '/incident-reports', label: 'Incident Reports' },
     // { path: '/database', label: 'Database' },
-    { path: '/user-management', label: 'Users' },
+    ...(currentUser?.isAdmin ? [
+      { path: '/user-management', label: 'Users' },
+      { path: '/incident-management', label: 'Incidents' }
+    ] : []),
     { path: '/aboutproject', label: 'About Project' },
     // { path: '/integration', label: 'Integration' },
     { path: '/demo', label: 'Demo' }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+// import { useState } from 'react'
 import './App.css'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import ProtectedRoute from "./context/ProtectedRoute";
@@ -16,6 +16,12 @@ import SignIn from "./pages/SignIn";
 import Profile from './pages/Profile';
 import AboutPage from './pages/AboutProject';
 import Resources from './pages/Resourse';
+import AdminDatabaseViewer from './pages/AdminDatabaseViewer';
+// Remove the import that's causing the error
+// import IncidentDetail from './pages/IncidentDetail'; 
+
+// Add this import after creating the file
+import IncidentDetail from './pages/IncidentDetail';
 
 function App() {
   return (
@@ -46,11 +52,25 @@ function App() {
                     <Route path="/incident-reports" element={<IncidentReportManagement />} />
                     <Route path="/database" element={<DatabaseManagement />} />
                     <Route path="/file-upload" element={<FileUpload />} />
+                    {/* Add the new admin database viewer route */}
+                    <Route path="/admin-db-viewer" element={<AdminDatabaseViewer />} />
+                    <Route 
+                      path="/incident-management" 
+                      element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                          <IncidentReportManagement />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route path="/incident/:id" element={
+                      <ProtectedRoute>
+                        <IncidentDetail />
+                      </ProtectedRoute>
+                    } />
                   </Routes>
                 </ProtectedRoute>
               }
             />
-
           </Routes>
         </main>
       </div>

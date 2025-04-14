@@ -11,6 +11,8 @@ import path from 'path';
 
 import userRoutes from './routes/user.route.js';
 import authRoutes from './routes/auth.route.js';
+import adminRoutes from './routes/admin.route.js';
+import incidentRoutes from './routes/incidents.js';
 
 dotenv.config();
 
@@ -102,7 +104,8 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
 app.use('/api/user', userRoutes);
 app.use('/api/auth', authRoutes);
-
+app.use('/api/admin', adminRoutes);
+app.use('/api/incidents', incidentRoutes);
 
 app.use(express.static(path.join(__dirname, '/client/dist')));
 

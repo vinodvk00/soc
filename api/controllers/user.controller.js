@@ -78,15 +78,16 @@ export const signout = (req, res, next) => {
 };
 
 export const getUsers = async (req, res, next) => {
-  // if (!req.user.isAdmin) {
-  //   return next(errorHandler(403, 'You are not allowed to see all users'));
-  // }
   try {
     const startIndex = parseInt(req.query.startIndex) || 0;
     const limit = parseInt(req.query.limit) || 9;
     const sortDirection = req.query.sort === 'asc' ? 1 : -1;
+    const showArchived = req.query.showArchived === 'true';
 
-    const users = await User.find()
+    // Add filter to exclude archived users by default unless specifically requested
+    const filter = showArchived ? {} : { isArchived: { $ne: true } };
+
+    const users = await User.find(filter)
       .sort({ createdAt: sortDirection })
       .skip(startIndex)
       .limit(limit);
@@ -96,16 +97,19 @@ export const getUsers = async (req, res, next) => {
       return rest;
     });
 
-    const totalUsers = await User.countDocuments();
+    // Count total non-archived users
+    const totalUsers = await User.countDocuments(filter);
 
     const now = new Date();
-
     const oneMonthAgo = new Date(
       now.getFullYear(),
       now.getMonth() - 1,
       now.getDate()
     );
+    
+    // Count new users in the last month (non-archived)
     const lastMonthUsers = await User.countDocuments({
+      ...filter,
       createdAt: { $gte: oneMonthAgo },
     });
 
@@ -127,6 +131,27 @@ export const getUser = async (req, res, next) => {
     }
     const { password, ...rest } = user._doc;
     res.status(200).json(rest);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Add this function to your user controller
+export const archiveUser = async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.userId,
+      {
+        $set: { isArchived: true, archivedAt: new Date() }
+      },
+      { new: true }
+    );
+    
+    if (!user) {
+      return next(errorHandler(404, 'User not found'));
+    }
+    
+    res.status(200).json({ success: true, message: 'User archived successfully' });
   } catch (error) {
     next(error);
   }
