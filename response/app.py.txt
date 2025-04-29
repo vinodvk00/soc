@@ -1,0 +1,109 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import os
+import pefile
+
+app = Flask(__name__)
+CORS(app)
+
+app.config['UPLOAD_FOLDER'] = 'uploads/'
+app.config['ALLOWED_EXTENSIONS'] = {'exe', 'dll'}
+
+# Keep only the analysis functionality, remove Flask app initialization
+def allowed_file(filename):
+    allowed_extensions = {'exe', 'dll'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
+def analyze_pe_file(file_path):
+    try:
+        pe = pefile.PE(file_path)
+        pe_info = {
+            "File Header": {
+                "Machine": hex(pe.FILE_HEADER.Machine),
+                "Number of Sections": pe.FILE_HEADER.NumberOfSections,
+                "Time Date Stamp": pe.FILE_HEADER.TimeDateStamp,
+                "Characteristics": hex(pe.FILE_HEADER.Characteristics)
+            },
+            "Optional Header": {
+                "Address Of Entry Point": hex(pe.OPTIONAL_HEADER.AddressOfEntryPoint),
+                "Image Base": hex(pe.OPTIONAL_HEADER.ImageBase),
+                "Section Alignment": pe.OPTIONAL_HEADER.SectionAlignment,
+                "File Alignment": pe.OPTIONAL_HEADER.FileAlignment,
+                "Operating System Version": pe.OPTIONAL_HEADER.MajorOperatingSystemVersion,
+                "Subsystem": pe.OPTIONAL_HEADER.Subsystem,
+            },
+            "Sections": [],
+            "Imports": [],
+            "Compilation Time": None,
+            "Is Executable": pe.OPTIONAL_HEADER.Magic == 0x10b
+        }
+
+        if hasattr(pe, 'FILE_HEADER'):
+            pe_info["Compilation Time"] = pe.FILE_HEADER.TimeDateStamp
+
+        for section in pe.sections:
+            section_info = {
+                "Name": section.Name.decode('utf-8').strip(),
+                "Virtual Size": hex(section.Misc_VirtualSize),
+                "Virtual Address": hex(section.VirtualAddress),
+                "Size of Raw Data": hex(section.SizeOfRawData),
+                "Pointer to Raw Data": hex(section.PointerToRawData),
+                "Characteristics": hex(section.Characteristics)
+            }
+            pe_info["Sections"].append(section_info)
+
+        if hasattr(pe, 'DIRECTORY_ENTRY_IMPORT'):
+            for entry in pe.DIRECTORY_ENTRY_IMPORT:
+                imports = {
+                    "DLL": entry.dll.decode('utf-8'),
+                    "Functions": []
+                }
+                for imp in entry.imports:
+                    if imp.name:
+                        imports["Functions"].append(imp.name.decode('utf-8'))
+                pe_info["Imports"].append(imports)
+
+        pe.close()
+        return pe_info, None
+    except Exception as e:
+        return None, str(e)
+
+@app.route('/api/analyze', methods=['POST'])
+def analyze_file():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    if not allowed_file(file.filename):
+        return jsonify({'error': 'File type not allowed'}), 400
+
+    filepath = None
+    try:
+        # Save the uploaded file
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        file.save(filepath)
+
+        # Analyze the file
+        result, error = analyze_pe_file(filepath)
+        
+        if error:
+            return jsonify({'error': error}), 500
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        # Clean up the uploaded file in the finally block
+        if filepath and os.path.exists(filepath):
+            try:
+                os.remove(filepath)
+            except Exception:
+                pass  # Ignore cleanup errors
+
+if __name__ == '__main__':
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    app.run(debug=True)

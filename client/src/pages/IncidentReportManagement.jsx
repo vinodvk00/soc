@@ -47,6 +47,8 @@ const IncidentReportManagement = () => {
       { _id: { year: 2023, month: 11 }, count: 2 }
     ]
   });
+  // Add theme selector
+  const { theme } = useSelector((state) => state.theme);
   const { currentUser } = useSelector((state) => state.user);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -343,41 +345,45 @@ const IncidentReportManagement = () => {
 
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-bold mb-6">Incident Management</h1>
-      <p className="text-muted-foreground mb-6">View and manage all security incidents reported by users</p>
-      
-      {/* Development notice */}
-      <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Incident Management</h1>
+          <p className="text-muted-foreground mt-2">View and manage all security incidents reported by users</p>
+        </div>
+      </div>
+
+      {/* Development notice - Updated for dark mode */}
+      <div className="bg-yellow-100 dark:bg-yellow-900/30 border-l-4 border-yellow-500 p-4 mb-6 rounded-r">
         <div className="flex">
           <div className="flex-shrink-0">
             <AlertCircle className="h-5 w-5 text-yellow-500" />
           </div>
           <div className="ml-3">
-            <p className="text-sm text-yellow-700">
+            <p className="text-sm text-yellow-700 dark:text-yellow-400">
               <strong>Note:</strong> This module is currently under development. Some features may not work as expected.
             </p>
           </div>
         </div>
       </div>
 
-      <Tabs defaultValue="incidents">
-        <TabsList className="mb-6">
-          <TabsTrigger value="incidents">Incidents</TabsTrigger>
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+      <Tabs defaultValue="incidents" className="space-y-6">
+        <TabsList className="bg-muted/50 p-1 rounded-lg">
+          <TabsTrigger value="incidents" className="text-sm">Incidents</TabsTrigger>
+          <TabsTrigger value="dashboard" className="text-sm">Dashboard</TabsTrigger>
         </TabsList>
 
         <TabsContent value="incidents">
           <div className="grid gap-6">
-            <Card>
+            <Card className="border-border/50">
               <CardHeader>
-                <CardTitle>Incident Filters</CardTitle>
+                <CardTitle className="text-xl">Incident Filters</CardTitle>
                 <CardDescription>Filter incidents by status and severity</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-4 items-center">
                   <div className="w-full sm:w-auto">
                     <Select value={severityFilter} onValueChange={setSeverityFilter}>
-                      <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectTrigger className="w-full sm:w-[180px] bg-background">
                         <SelectValue placeholder="All Severities" />
                       </SelectTrigger>
                       <SelectContent>
@@ -389,54 +395,63 @@ const IncidentReportManagement = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button variant="outline" onClick={clearFilters}>
+                  <Button 
+                    variant="outline" 
+                    onClick={clearFilters}
+                    className="border-border/50 hover:bg-accent"
+                  >
                     Clear Filters
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Incident List</CardTitle>
-                <CardDescription>
-                  {incidents.length} incidents found
-                </CardDescription>
+            <Card className="border-border/50">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl">Incident List</CardTitle>
+                  <CardDescription className="mt-1">
+                    {incidents.length} incidents found
+                  </CardDescription>
+                </div>
               </CardHeader>
               <CardContent>
                 {loading ? (
-                  <div className="flex justify-center items-center py-8">
+                  <div className="flex justify-center items-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : error ? (
-                  <div className="text-center py-8 text-red-500">
-                    <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                    <p>{error}</p>
+                  <div className="text-center py-12 text-destructive">
+                    <AlertCircle className="h-8 w-8 mx-auto mb-3" />
+                    <p className="font-medium">{error}</p>
                   </div>
                 ) : incidents.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <FileText className="h-8 w-8 mx-auto mb-2" />
-                    <p>No incidents found</p>
-                    <p className="text-sm">There are no incidents matching your filters.</p>
+                  <div className="text-center py-12">
+                    <FileText className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
+                    <p className="font-medium text-foreground">No incidents found</p>
+                    <p className="text-sm text-muted-foreground mt-1">There are no incidents matching your filters.</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-lg border border-border/50">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Severity</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Reported By</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead>Actions</TableHead>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="font-medium">ID</TableHead>
+                          <TableHead className="font-medium">Title</TableHead>
+                          <TableHead className="font-medium">Status</TableHead>
+                          <TableHead className="font-medium">Severity</TableHead>
+                          <TableHead className="font-medium">Category</TableHead>
+                          <TableHead className="font-medium">Reported By</TableHead>
+                          <TableHead className="font-medium">Created</TableHead>
+                          <TableHead className="font-medium">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {incidents.map((incident) => (
-                          <TableRow key={incident._id}>
+                          <TableRow 
+                            key={incident._id}
+                            className="hover:bg-muted/50 transition-colors"
+                          >
                             <TableCell className="font-medium">
                               {incident.incidentNumber || incident._id.substring(0, 8)}
                             </TableCell>

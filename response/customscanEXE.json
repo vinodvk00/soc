@@ -1,0 +1,167 @@
+{
+    "analysis": {
+        "Compilation Time": 1712304000,
+        "File Header": {
+            "Characteristics": "0x12f",
+            "Machine": "0x14c",
+            "Number of Sections": 4,
+            "Time Date Stamp": 1712304000
+        },
+        "Imports": [
+            {
+                "DLL": "ole32.dll",
+                "Functions": [
+                    "CoCreateInstance",
+                    "CoInitialize"
+                ]
+            },
+            {
+                "DLL": "USER32.dll",
+                "Functions": [
+                    "PeekMessageW",
+                    "ExitWindowsEx",
+                    "GetDlgItemTextW",
+                    "SetWindowTextW",
+                    "ShowWindow",
+                    "MessageBoxW",
+                    "CreateDialogParamW",
+                    "LoadIconW",
+                    "SendMessageW",
+                    "GetMessageW",
+                    "EnableWindow",
+                    "GetDlgItem",
+                    "IsDialogMessageW",
+                    "TranslateMessage",
+                    "DispatchMessageW",
+                    "SetDlgItemTextW",
+                    "DestroyWindow"
+                ]
+            },
+            {
+                "DLL": "ADVAPI32.dll",
+                "Functions": [
+                    "RegSetValueExW",
+                    "OpenProcessToken",
+                    "LookupPrivilegeValueW",
+                    "AdjustTokenPrivileges",
+                    "RegQueryValueExW",
+                    "RegOpenKeyExW",
+                    "RegCloseKey",
+                    "RegCreateKeyExW"
+                ]
+            },
+            {
+                "DLL": "SHELL32.dll",
+                "Functions": [
+                    "SHGetFolderPathW",
+                    "SHBrowseForFolderW",
+                    "SHGetPathFromIDListW"
+                ]
+            },
+            {
+                "DLL": "MSVCRT.dll",
+                "Functions": [
+                    "_exit",
+                    "_XcptFilter",
+                    "_acmdln",
+                    "__getmainargs",
+                    "_initterm",
+                    "__setusermatherr",
+                    "_adjust_fdiv",
+                    "__p__commode",
+                    "__p__fmode",
+                    "__set_app_type",
+                    "_except_handler3",
+                    "_controlfp",
+                    "memcpy",
+                    "memcmp",
+                    "memmove",
+                    "malloc",
+                    "free",
+                    "exit",
+                    "memset"
+                ]
+            },
+            {
+                "DLL": "KERNEL32.dll",
+                "Functions": [
+                    "ReadFile",
+                    "CloseHandle",
+                    "CreateFileW",
+                    "FormatMessageW",
+                    "WriteFile",
+                    "DeleteFileW",
+                    "CreateDirectoryW",
+                    "GetSystemDirectoryW",
+                    "LoadLibraryW",
+                    "GetModuleFileNameW",
+                    "GetFileAttributesW",
+                    "SetFilePointer",
+                    "GetVersion",
+                    "LoadLibraryExW",
+                    "GetModuleHandleA",
+                    "GetStartupInfoA",
+                    "LocalFree",
+                    "SetFileAttributesW",
+                    "SetFileTime",
+                    "MoveFileExW",
+                    "GetLastError",
+                    "lstrcatW",
+                    "GetCommandLineW",
+                    "lstrcpyW",
+                    "GetModuleHandleW",
+                    "GetProcAddress",
+                    "GetCurrentProcess",
+                    "lstrlenW"
+                ]
+            }
+        ],
+        "Is Executable": true,
+        "Optional Header": {
+            "Address Of Entry Point": "0x7294",
+            "File Alignment": 512,
+            "Image Base": "0x400000",
+            "Operating System Version": 4,
+            "Section Alignment": 4096,
+            "Subsystem": 2
+        },
+        "Sections": [
+            {
+                "Characteristics": "0x60000020",
+                "Name": ".text\u0000\u0000\u0000",
+                "Pointer to Raw Data": "0x400",
+                "Size of Raw Data": "0x6600",
+                "Virtual Address": "0x1000",
+                "Virtual Size": "0x65ee"
+            },
+            {
+                "Characteristics": "0x40000040",
+                "Name": ".rdata\u0000\u0000",
+                "Pointer to Raw Data": "0x6a00",
+                "Size of Raw Data": "0x1400",
+                "Virtual Address": "0x8000",
+                "Virtual Size": "0x1346"
+            },
+            {
+                "Characteristics": "0xc0000040",
+                "Name": ".data\u0000\u0000\u0000",
+                "Pointer to Raw Data": "0x7e00",
+                "Size of Raw Data": "0x200",
+                "Virtual Address": "0xa000",
+                "Virtual Size": "0x38ec"
+            },
+            {
+                "Characteristics": "0x40000040",
+                "Name": ".rsrc\u0000\u0000\u0000",
+                "Pointer to Raw Data": "0x8000",
+                "Size of Raw Data": "0x1000",
+                "Virtual Address": "0xe000",
+                "Virtual Size": "0xfe8"
+            }
+        ]
+    },
+    "filename": "7z2404-x64.exe",
+    "filesize": 1616179,
+    "sha256": "4931869d95ffa6f55788e3b5d92088f3fe590e13532b9d8e811a52e2b377bfb6",
+    "timestamp": "2025-04-29T20:59:39.114709"
+}

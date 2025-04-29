@@ -1,0 +1,255 @@
+import os
+from flask import Flask, request, jsonify, redirect, url_for, render_template
+from flask_cors import CORS
+from werkzeug.utils import secure_filename
+import tempfile
+from datetime import datetime
+
+# Import analyzers from existing modules
+from app import analyze_pe_file
+from pdf import analyze_pdf, calculate_hash
+
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
+
+# Configure upload settings
+UPLOAD_FOLDER = tempfile.gettempdir()
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 * 10  # 160MB max upload
+
+# Define allowed file extensions
+ALLOWED_EXTENSIONS = {'pdf', 'exe', 'dll'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def get_file_type(filename):
+    if '.' not in filename:
+        return None
+    ext = filename.rsplit('.', 1)[1].lower()
+    if ext in {'exe', 'dll'}:
+        return 'pe'
+    elif ext == 'pdf':
+        return 'pdf'
+    return None
+
+# Web interface routes
+@app.route('/', methods=['GET'])
+def home():
+    """Homepage with file upload form"""
+    return render_template('upload.html')
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    """Handle file upload and redirect to results"""
+    # Check if file part exists in request
+    if 'file' not in request.files:
+        return render_template('upload.html', error='No file part in the request')
+    
+    file = request.files['file']
+    
+    # Check if user submitted an empty file
+    if file.filename == '':
+        return render_template('upload.html', error='No file selected for uploading')
+    
+    # Check if file is allowed
+    if not allowed_file(file.filename):
+        return render_template('upload.html', 
+                              error=f'File type not allowed. Only {", ".join(ALLOWED_EXTENSIONS)} files are accepted.')
+    
+    # Determine file type
+    file_type = get_file_type(file.filename)
+    if not file_type:
+        return render_template('upload.html', error='Unable to determine file type')
+    
+    try:
+        # Read file data
+        file_data = file.read()
+        file_size = len(file_data)
+        
+        # Create secure filename
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Write to temp file for analysis
+        with open(file_path, 'wb') as f:
+            f.write(file_data)
+        
+        # Get file hash
+        file_hash = calculate_hash(file_data)
+        
+        # Route to appropriate analyzer based on file type
+        if file_type == 'pdf':
+            # Analyze PDF file
+            analysis_result = analyze_pdf(file_path, file_data)
+            
+            # Return analysis results
+            result = {
+                'filename': filename,
+                'filesize': file_size,
+                'sha256': file_hash,
+                'threats_detected': analysis_result['threats_detected'],
+                'risk_level': analysis_result['risk_level'],
+                'analysis': analysis_result,
+                'timestamp': datetime.now().isoformat()
+            }
+        
+        elif file_type == 'pe':
+            # Analyze PE file
+            pe_info, error = analyze_pe_file(file_path)
+            
+            if error:
+                return render_template('upload.html', error=error)
+            
+            # Return analysis results
+            result = {
+                'filename': filename,
+                'filesize': file_size,
+                'sha256': file_hash,
+                'analysis': pe_info,
+                'timestamp': datetime.now().isoformat()
+            }
+        
+        # Clean up temp file
+        try:
+            os.remove(file_path)
+        except:
+            pass
+        
+        return render_template('results.html', result=result)
+        
+    except Exception as e:
+        print(f"Error processing file: {str(e)}")
+        return render_template('upload.html', 
+                              error=f'Error processing the {file_type.upper()} file: {str(e)}')
+
+# API routes
+@app.route('/api/analyze', methods=['POST'])
+def analyze():
+    # Check if file part exists in request
+    if 'file' not in request.files:
+        return jsonify({
+            'error': 'No file part in the request'
+        }), 400
+    
+    file = request.files['file']
+    
+    # Check if user submitted an empty file
+    if file.filename == '':
+        return jsonify({
+            'error': 'No file selected for uploading'
+        }), 400
+    
+    # Check if file is allowed
+    if not allowed_file(file.filename):
+        return jsonify({
+            'error': f'File type not allowed. Only {", ".join(ALLOWED_EXTENSIONS)} files are accepted.'
+        }), 400
+    
+    # Determine file type
+    file_type = get_file_type(file.filename)
+    if not file_type:
+        return jsonify({
+            'error': 'Unable to determine file type'
+        }), 400
+    
+    try:
+        # Read file data
+        file_data = file.read()
+        file_size = len(file_data)
+        
+        # Create secure filename
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Write to temp file for analysis
+        with open(file_path, 'wb') as f:
+            f.write(file_data)
+        
+        # Get file hash
+        file_hash = calculate_hash(file_data)
+        
+        # Route to appropriate analyzer based on file type
+        if file_type == 'pdf':
+            # Analyze PDF file
+            analysis_result = analyze_pdf(file_path, file_data)
+            
+            # Return analysis results
+            response = {
+                'filename': filename,
+                'filesize': file_size,
+                'sha256': file_hash,
+                'threats_detected': analysis_result['threats_detected'],
+                'risk_level': analysis_result['risk_level'],
+                'analysis': analysis_result,
+                'timestamp': datetime.now().isoformat()
+            }
+        
+        elif file_type == 'pe':
+            # Analyze PE file
+            pe_info, error = analyze_pe_file(file_path)
+            
+            if error:
+                return jsonify({'error': error}), 500
+            
+            # Return analysis results
+            response = {
+                'filename': filename,
+                'filesize': file_size,
+                'sha256': file_hash,
+                'analysis': pe_info,
+                'timestamp': datetime.now().isoformat()
+            }
+        
+        # Clean up temp file
+        try:
+            os.remove(file_path)
+        except:
+            pass
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        print(f"Error processing file: {str(e)}")
+        return jsonify({
+            'error': f'Error processing the {file_type.upper()} file',
+            'details': str(e)
+        }), 500
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """API health check endpoint."""
+    return jsonify({
+        'status': 'ok',
+        'timestamp': datetime.now().isoformat(),
+        'service': 'File Analysis API',
+        'supported_file_types': list(ALLOWED_EXTENSIONS)
+    })
+
+@app.route('/api', methods=['GET'])
+def api_info():
+    """API documentation endpoint."""
+    return jsonify({
+        'name': 'File Analysis API',
+        'version': '1.0.0',
+        'description': 'This API allows you to analyze PDF and PE (EXE, DLL) files for security analysis.',
+        'usage': {
+            'analyze_file': {
+                'endpoint': '/api/analyze',
+                'method': 'POST',
+                'content_type': 'multipart/form-data',
+                'parameters': [{'name': 'file', 'type': 'file', 'required': True}],
+                'example': 'curl -X POST -F "file=@/path/to/your/file.exe" http://localhost:5000/api/analyze'
+            },
+            'health_check': {
+                'endpoint': '/api/health',
+                'method': 'GET',
+                'example': 'curl http://localhost:5000/api/health'
+            }
+        },
+        'supported_file_types': list(ALLOWED_EXTENSIONS)
+    })
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=True, host='0.0.0.0', port=port)
