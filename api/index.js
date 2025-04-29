@@ -9,8 +9,13 @@ import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import path from 'path';
 
+// Remove this import
+// import { analyzePEFile } from './services/peAnalyzer.js';
+
 import userRoutes from './routes/user.route.js';
 import authRoutes from './routes/auth.route.js';
+import adminRoutes from './routes/admin.route.js';
+import incidentRoutes from './routes/incidents.js';
 
 dotenv.config();
 
@@ -69,40 +74,92 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
     const filePath = req.file.path;
     const fileHash = await calculateFileHash(filePath);
+    
+    let analysisResults = {
+        virusTotal: null,
+        // Remove peAnalysis
+    };
+
+    // Perform VirusTotal analysis
     const vtResponse = await queryVirusTotal(fileHash);
+    if (!vtResponse.error) {
+        const attributes = vtResponse.data?.attributes || {};
+        const results = attributes.last_analysis_results || {};
+        analysisResults.virusTotal = {
+            name: attributes.meaningful_name || "Unknown",
+            hash_sha256: attributes.sha256 || fileHash,
+            description: attributes.type_description || "Unknown",
+            size: `${(attributes.size || 0) / 1000} KB`,
+            antivirusResults: Object.entries(results).map(
+                ([engine, result]) => ({
+                    engine,
+                    verdict: result.category === "malicious" ? "Malicious" : result.category,
+                })
+            )
+        };
+    }
+
+    // Perform PE analysis if file is an executable
+    // Remove PE analysis section
+    // if (req.file.mimetype === 'application/x-msdownload' || 
+    //     req.file.originalname.endsWith('.exe') || 
+    //     req.file.originalname.endsWith('.dll')) {
+    //     try {
+    //         analysisResults.peAnalysis = await analyzePEFile(filePath);
+    //     } catch (error) {
+    //         console.error('PE analysis failed:', error);
+    //         analysisResults.peAnalysis = { error: error.message };
+    //     }
+    // }
 
     // Clean up the uploaded file
     fs.remove(filePath);
 
-    if (vtResponse.error)
-        return res.status(500).json({ error: vtResponse.error });
-
-    const attributes = vtResponse.data?.attributes || {};
-    const results = attributes.last_analysis_results || {};
-    const antivirusResults = Object.entries(results).map(
-        ([engine, result]) => ({
-            engine,
-            verdict:
-                result.category === "malicious" ? "Malicious" : result.category,
-        })
-    );
-
-    return res.json({
-        name: attributes.meaningful_name || "Unknown",
-        hash_sha256: attributes.sha256 || fileHash,
-        description: attributes.type_description || "Unknown",
-        size: `${(attributes.size || 0) / 1000} KB`,
-        antivirusResults,
-        maliciousCount: antivirusResults.filter(
-            (res) => res.verdict === "Malicious"
-        ).length,
-    });
+    return res.json(analysisResults);
 });
+
+// Add a dedicated PE analysis endpoint
+// Remove the entire PE analysis endpoint
+// app.post("/api/analyze-pe", upload.single("file"), async (req, res) => {
+//     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+//
+//     const filePath = req.file.path;
+//     
+//     try {
+//         if (req.file.mimetype === 'application/x-msdownload' || 
+//             req.file.originalname.endsWith('.exe') || 
+//             req.file.originalname.endsWith('.dll')) {
+//             
+//             const peAnalysisResult = await analyzePEFile(filePath);
+//             
+//             fs.remove(filePath);
+//             
+//             return res.json({ success: true, data: peAnalysisResult });
+//         } else {
+//             fs.remove(filePath);
+//             
+//             return res.status(400).json({ 
+//                 success: false, 
+//                 error: "Unsupported file type. Please upload a Windows executable (.exe) or DLL (.dll) file." 
+//             });
+//         }
+//     } catch (error) {
+//         console.error('PE analysis failed:', error);
+//         
+//         fs.remove(filePath);
+//         
+//         return res.status(500).json({ 
+//             success: false, 
+//             error: `PE Analysis failed: ${error.message}` 
+//         });
+//     }
+// });
 
 
 app.use('/api/user', userRoutes);
 app.use('/api/auth', authRoutes);
-
+app.use('/api/admin', adminRoutes);
+app.use('/api/incidents', incidentRoutes);
 
 app.use(express.static(path.join(__dirname, '/client/dist')));
 

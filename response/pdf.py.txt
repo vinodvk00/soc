@@ -1,0 +1,176 @@
+
+import os
+import hashlib
+import time
+from werkzeug.utils import secure_filename
+import tempfile
+from datetime import datetime
+import subprocess
+import re
+import json
+import fitz  # PyMuPDF
+import shutil
+import sys
+
+# Remove Flask app initialization
+
+# Keep these constants for the module
+UPLOAD_FOLDER = tempfile.gettempdir()
+ALLOWED_EXTENSIONS = {'pdf'}
+
+# Check if pdfid.py is available in the system
+try:
+    import pdfid
+    PDFID_AVAILABLE = True
+except ImportError:
+    PDFID_AVAILABLE = False
+    print("Warning: pdfid module not found. Using basic analysis fallback.")
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def calculate_hash(file_data):
+    """Calculate SHA256 hash of file data."""
+    return hashlib.sha256(file_data).hexdigest()
+
+def run_pdfid(file_path):
+    """Run pdfid.py on the PDF file if available."""
+    if not PDFID_AVAILABLE:
+        return None
+    
+    try:
+        options = pdfid.get_arguments([file_path])
+        result = pdfid.PDFiDMain(options)
+        return result
+    except Exception as e:
+        print(f"Error running pdfid: {str(e)}")
+        return None
+
+def analyze_with_pymupdf(file_path):
+    """Analyze PDF using PyMuPDF for additional insights."""
+    results = {
+        "total_pages": 0,
+        "has_javascript": False,
+        "has_embedded_files": False,
+        "has_xml": False,
+        "has_acroform": False,
+        "suspicious_actions": []
+    }
+    
+    try:
+        doc = fitz.open(file_path)
+        results["total_pages"] = len(doc)
+        
+        # Check document catalog and metadata
+        if doc.is_pdf:
+            catalog = doc.pdf_catalog()
+            if "/JavaScript" in catalog or "/JS" in catalog:
+                results["has_javascript"] = True
+            
+            if "/Names" in catalog and "/EmbeddedFiles" in catalog.get("/Names", {}):
+                results["has_embedded_files"] = True
+                
+            if "/AcroForm" in catalog:
+                results["has_acroform"] = True
+            
+            # Check for suspicious actions in document
+            if "/OpenAction" in catalog:
+                results["suspicious_actions"].append("OpenAction in document catalog")
+            
+            if "/AA" in catalog:  # Additional Actions
+                results["suspicious_actions"].append("Additional Actions in document catalog")
+                
+            # Check for Launch actions
+            if "/Launch" in str(catalog):
+                results["suspicious_actions"].append("Launch action in document catalog")
+        
+        # Analyze individual pages
+        for page_num, page in enumerate(doc):
+            # Check for JavaScript in annotations
+            annots = page.annots()
+            if annots:
+                for annot in annots:
+                    if "/A" in annot.info:
+                        action = annot.info.get("/A", {})
+                        if "/S" in action and action["/S"] == "/JavaScript":
+                            results["has_javascript"] = True
+                            results["suspicious_actions"].append(f"JavaScript action in annotation on page {page_num+1}")
+                        if "/S" in action and action["/S"] == "/Launch":
+                            results["suspicious_actions"].append(f"Launch action in annotation on page {page_num+1}")
+        
+        doc.close()
+    except Exception as e:
+        print(f"PyMuPDF analysis error: {str(e)}")
+    
+    return results
+
+def analyze_pdf(file_path, file_data):
+    """
+    Comprehensive PDF analysis using multiple methods.
+    """
+    # Basic analysis with regex patterns
+    content = file_data.decode('latin-1', errors='ignore')
+    
+    # Check for JavaScript
+    javascript_detected = bool(re.search(r'/JavaScript|/JS', content, re.IGNORECASE))
+    
+    # Check for automatic actions
+    openaction_detected = '/OpenAction' in content
+    launch_detected = '/Launch' in content
+    
+    # Check for embedded files
+    embeddedfiles_detected = '/EmbeddedFiles' in content or '/EmbeddedFile' in content
+    
+    # Advanced analysis with PyMuPDF
+    pymupdf_results = analyze_with_pymupdf(file_path)
+    
+    # Run pdfid.py if available
+    pdfid_results = run_pdfid(file_path)
+    
+    # Collect suspicious elements
+    suspicious_elements = []
+    
+    if javascript_detected or pymupdf_results["has_javascript"]:
+        suspicious_elements.append("JavaScript code")
+    
+    if openaction_detected or any("OpenAction" in action for action in pymupdf_results["suspicious_actions"]):
+        suspicious_elements.append("OpenAction")
+    
+    if launch_detected or any("Launch" in action for action in pymupdf_results["suspicious_actions"]):
+        suspicious_elements.append("Launch action")
+    
+    if embeddedfiles_detected or pymupdf_results["has_embedded_files"]:
+        suspicious_elements.append("Embedded files")
+    
+    if pymupdf_results["has_acroform"]:
+        suspicious_elements.append("AcroForm")
+    
+    # Determine risk level
+    if launch_detected or (javascript_detected and (openaction_detected or embeddedfiles_detected)):
+        risk_level = "malicious"
+    elif javascript_detected or openaction_detected or embeddedfiles_detected:
+        risk_level = "suspicious"
+    else:
+        risk_level = "safe"
+    
+    # Compile analysis results
+    analysis_result = {
+        "javascript": javascript_detected or pymupdf_results["has_javascript"],
+        "openaction": openaction_detected or any("OpenAction" in action for action in pymupdf_results["suspicious_actions"]),
+        "launch": launch_detected or any("Launch" in action for action in pymupdf_results["suspicious_actions"]),
+        "embeddedfiles": embeddedfiles_detected or pymupdf_results["has_embedded_files"],
+        "acroform": pymupdf_results["has_acroform"],
+        "suspicious_elements": suspicious_elements,
+        "suspicious_actions": pymupdf_results["suspicious_actions"],
+        "total_pages": pymupdf_results["total_pages"],
+        "risk_level": risk_level,
+        "threats_detected": len(suspicious_elements)
+    }
+    
+    # Add pdfid results if available
+    if pdfid_results:
+        analysis_result["pdfid"] = pdfid_results
+    
+    return analysis_result
+
+# Remove all Flask routes and app.run() code

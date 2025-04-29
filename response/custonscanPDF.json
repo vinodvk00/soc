@@ -1,0 +1,22 @@
+{
+    "analysis": {
+        "acroform": false,
+        "embeddedfiles": false,
+        "javascript": true,
+        "launch": false,
+        "openaction": false,
+        "risk_level": "suspicious",
+        "suspicious_actions": [],
+        "suspicious_elements": [
+            "JavaScript code"
+        ],
+        "threats_detected": 1,
+        "total_pages": 110
+    },
+    "filename": "2023-10-06_calisthenics-playbook-peek-300dpi-a4-raster-bestseller.pdf",
+    "filesize": 36111247,
+    "risk_level": "suspicious",
+    "sha256": "b2a0e25306c719dc6407c37c04b4d379e26b0ef1609e7d8526c04a330fb63d54",
+    "threats_detected": 1,
+    "timestamp": "2025-04-29T20:58:44.836949"
+}

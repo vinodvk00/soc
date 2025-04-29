@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -120,21 +120,22 @@ const UserManagement = () => {
     fetchUsers();
   }, [currentUser, navigate, currentPage, sortDirection]);
 
+  // Replace the handleDelete function with handleArchive
   const handleDelete = async (userId) => {
     try {
-      await fetchWithAuth(`/api/user/delete/${userId}`, {
-        method: 'DELETE'
-      });
-      
-      setUsers(users.filter(user => user._id !== userId));
-      setStats(prev => ({
-        ...prev,
-        totalUsers: prev.totalUsers - 1
-      }));
+    // Change this from DELETE to PUT and use the archive endpoint
+    await fetchWithAuth(`/api/user/archive/${userId}`, {
+    method: 'PUT'
+    });
+    
+    // Update the UI to reflect the archived status
+    setUsers(users.map(user => 
+    user._id === userId ? { ...user, isArchived: true } : user
+    ));
     } catch (err) {
-      setError(err.message);
+    setError(err.message);
     }
-  };
+    };
 
   const toggleSort = () => {
     setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
@@ -240,12 +241,21 @@ const UserManagement = () => {
                             <Edit className="h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
+                          <TableCell>
+                            {user.isAdmin ? (
+                              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Admin</span>
+                            ) : user.isArchived ? (
+                              <span className="bg-amber-100 text-amber-800 text-xs font-medium px-2.5 py-0.5 rounded">Archived</span>
+                            ) : (
+                              <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">User</span>
+                            )}
+                          </TableCell>
                           <DropdownMenuItem
                             onClick={() => handleDelete(user._id)}
-                            className="flex items-center gap-2 text-red-600"
+                            className="flex items-center gap-2 text-amber-600"
                           >
                             <Trash className="h-4 w-4" />
-                            Delete
+                            Archive
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
